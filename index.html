@@ -1,1 +1,33 @@
-hello world
+      <div class="form-group">
+        <label>Pilih Data yang akan di-Paste:</label>
+        <select id="bulkType" class="form-control">
+          <option value="addStandar">Master Kartu Standar</option>
+          <option value="addResep">Master Resep (Bahan/Instruksi)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Paste teks TSV (Tab-separated) di sini:</label>
+        <textarea id="bulkText" class="form-control" rows="6" placeholder="Header1&#9;Header2&#9;Header3..."></textarea>
+      </div>
+      <button class="btn-submit" onclick="prosesBulkTSV()" style="background:#28A745;">Proses & Simpan</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// === KONFIGURASI ===
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwV_vZq9R1S5yOzsA--gtkx1zpEBohKdTGiXclEn4vsoeSOiUpNgUxPZFHNdZ2LWtalqA/exec"; 
+const ADMIN_PASSWORD = "admincwfn";
+
+const DEFAULT_SHEET_ID = "1x5LlGdHIPmkcbwUMeP_JGymBWCn39znsAxYoL9SmjNM";
+const REGISTRY_SHEET_ID = "12NhR0KH1Q_YfeJJJNotC_o2b60Irn-Jtpo5F2DbRdyA";
+let SHEET_ID = DEFAULT_SHEET_ID;
+
+const TAB_RESEP = "Master_Resep", TAB_MASTER = "MasterKartuStandard", TAB_JADWAL = "Jadwal_Menu_Mingguan";   
+const DAYS_MASAK = ["Senin","Selasa","Rabu","Kamis","Jumat"];
+const DAYS_PERSIAPAN = ["Senin","Selasa","Rabu","Kamis","Jumat"];
+const CAT_ORDER = ["Karbohidrat", "Lauk Hewani", "Lauk Nabati", "Sayur", "Sayuran"];
+
+let CURRENT_APP = "persiapan", CACHE_JADWAL = [], CACHE_MASTER = [], CACHE_RESEP = [], MENU_ARRAY = [];
+let SELECTED_DAY_MASAK = null, SELECTED_DAY_PERSIAPAN = null, todayDayName = "";
