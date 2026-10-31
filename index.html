@@ -47,16 +47,15 @@
 
         // 1. READ: Ambil dan Tampilkan Data
         async function muatData() {
-            const container = document.getElementById('daftar-tugas');
-            try {
-                const res = await fetch(`${API_URL}?dapur=${dapurSlug}`);
-                const data = await res.json();
-                renderData(data);
-            } catch (err) {
-                container.innerHTML = `<p style="color:red;">Gagal memuat data. Pastikan API URL benar.</p>`;
-            }
-        }
-
+    const container = document.getElementById('daftar-tugas');
+    try {
+        const res = await fetch(`${API_URL}?dapur=${dapurSlug}`);
+        const data = await res.json();
+        renderData(data);
+    } catch (err) {
+        container.innerHTML = '<p style="color:red;">Gagal memuat data. Pastikan API URL benar.</p>';
+    }
+}
         function renderData(data) {
             const container = document.getElementById('daftar-tugas');
             container.innerHTML = '';
