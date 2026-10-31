@@ -15,7 +15,6 @@
         .step input[type="checkbox"] { margin-right: 10px; transform: scale(1.3); }
         .step.done span { text-decoration: line-through; color: #94a3b8; }
         
-        /* Tombol-tombol CRUD */
         .btn { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px; }
         .btn-add { background: #10b981; color: white; width: 100%; padding: 12px; margin-bottom: 15px; font-size: 15px; }
         .btn-delete { background: #ef4444; color: white; }
@@ -30,57 +29,58 @@
         <p id="tgl">Memuat tanggal...</p>
     </div>
 
-    <!-- Tombol Tambah Tugas Baru -->
     <button class="btn btn-add" onclick="tambahTugas()">➕ Tambah Tugas Baru</button>
 
     <div id="daftar-tugas">
-        <p style="text-align:center; color:#666;">Memuat data dari database...</p>
+        <p style="text-align:center; color:#666;">Memuat data...</p>
     </div>
 
     <script>
-        // URL CLOUDFLARE WORKER ANDA
         const API_URL = 'https://api-dapur.usep-warman.workers.dev';
-        
-        // Mengambil parameter ?dapur=... dari URL (default ke sb2 jika kosong)
         const urlParams = new URLSearchParams(window.location.search);
         const dapurSlug = urlParams.get('dapur') || 'sb2';
 
-        // 1. READ: Ambil dan Tampilkan Data
         async function muatData() {
             const container = document.getElementById('daftar-tugas');
             try {
                 const res = await fetch(`${API_URL}?dapur=${dapurSlug}`);
-                const text = await res.text(); 
+                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
                 
-                try {
-                    const data = JSON.parse(text);
-                    renderData(data);
-                } catch (e) {
-                    throw new Error("API tidak mengembalikan JSON. Balasan: " + text.substring(0, 50));
-                }
-                
+                const data = await res.json();
+                renderData(data);
             } catch (err) {
-                container.innerHTML = `<p style="color:red; font-size:12px; word-wrap:break-word;">Error: ${err.message}</p>`;
+                container.innerHTML = `<p style="color:red; font-size:12px;">Gagal memuat: ${err.message}</p>`;
             }
         }
+
         function renderData(data) {
             const container = document.getElementById('daftar-tugas');
             container.innerHTML = '';
             
             if (data.length === 0) {
-                container.innerHTML = '<p style="text-align:center;">Belum ada tugas di dapur ini.</p>';
+                container.innerHTML = '<p style="text-align:center;">Belum ada tugas.</p>';
                 return;
             }
 
             data.forEach(task => {
                 let stepsHtml = '';
-                const steps = task.steps || []; 
-                
-                steps.forEach(step => {
+                let stepsArray = [];
+
+                // Perbaikan: Karena steps dari database berbentuk teks JSON, kita ubah jadi Array
+                if (task.steps) {
+                    try {
+                        stepsArray = JSON.parse(task.steps);
+                    } catch (e) {
+                        stepsArray = [];
+                    }
+                }
+
+                stepsArray.forEach(step => {
+                    const isChecked = step.is_completed === 1;
                     stepsHtml += `
-                        <label class="step ${step.is_completed ? 'done' : ''}">
-                            <input type="checkbox" ${step.is_completed ? 'checked' : ''} 
-                                onchange="toggleStep('${step.id}', ${step.is_completed})">
+                        <label class="step ${isChecked ? 'done' : ''}">
+                            <input type="checkbox" ${isChecked ? 'checked' : ''} 
+                                onchange="toggleStep('${step.id}', ${isChecked})">
                             <span>${step.instruction}</span>
                         </label>
                     `;
@@ -92,7 +92,7 @@
                         <div class="title">
                             ${task.title}
                             <div class="actions">
-                                <button class="btn btn-delete" onclick="hapusTugas('${task.id}')">🗑️ Hapus</button>
+                                <button class="btn btn-delete" onclick="hapusTugas('${task.id}')">🗑️</button>
                             </div>
                         </div>
                         <div class="pic">👤 PIC: ${task.pic_name || '-'}</div>
@@ -105,7 +105,6 @@
             });
         }
 
-        // 2. CREATE: Tambah Tugas
         async function tambahTugas() {
             const title = prompt("Nama Tugas (cth: Nasi Putih):");
             if (!title) return;
@@ -116,17 +115,11 @@
             await fetch(`${API_URL}?dapur=${dapurSlug}&action=create_task`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    title, 
-                    category, 
-                    pic_name: pic || 'Belum di-assign',
-                    menu_date: new Date().toISOString().split('T')[0]
-                })
+                body: JSON.stringify({ title, category, pic_name: pic || 'Belum di-assign', menu_date: new Date().toISOString().split('T')[0] })
             });
             muatData();
         }
 
-        // 3. CREATE: Tambah Langkah SOP
         async function tambahLangkah(taskId) {
             const instruction = prompt("Masukkan langkah SOP:");
             if (!instruction) return;
@@ -139,7 +132,6 @@
             muatData();
         }
 
-        // 4. UPDATE: Centang SOP
         async function toggleStep(stepId, currentStatus) {
             await fetch(`${API_URL}?action=toggle_step`, {
                 method: 'POST',
@@ -149,17 +141,12 @@
             muatData();
         }
 
-        // 5. DELETE: Hapus Tugas
         async function hapusTugas(taskId) {
-            if (!confirm("Yakin ingin menghapus tugas ini beserta SOP-nya?")) return;
-            
-            await fetch(`${API_URL}?action=delete_task&id=${taskId}`, {
-                method: 'DELETE'
-            });
+            if (!confirm("Yakin ingin menghapus tugas ini?")) return;
+            await fetch(`${API_URL}?action=delete_task&id=${taskId}`, { method: 'DELETE' });
             muatData();
         }
 
-        // Jalankan saat halaman dibuka
         document.getElementById('tgl').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         muatData();
     </script>
