@@ -1,33 +1,161 @@
-      <div class="form-group">
-        <label>Pilih Data yang akan di-Paste:</label>
-        <select id="bulkType" class="form-control">
-          <option value="addStandar">Master Kartu Standar</option>
-          <option value="addResep">Master Resep (Bahan/Instruksi)</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Paste teks TSV (Tab-separated) di sini:</label>
-        <textarea id="bulkText" class="form-control" rows="6" placeholder="Header1&#9;Header2&#9;Header3..."></textarea>
-      </div>
-      <button class="btn-submit" onclick="prosesBulkTSV()" style="background:#28A745;">Proses & Simpan</button>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tugas Tim Persiapan</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #f4f6f8; margin: 0; padding: 15px; }
+        .header { background: #1e293b; color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .category { font-weight: bold; color: #b45309; font-size: 14px; text-transform: uppercase; margin-bottom: 5px; }
+        .title { font-size: 18px; font-weight: bold; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .pic { font-size: 13px; color: #64748b; margin-bottom: 10px; }
+        .step { display: flex; align-items: center; padding: 8px 0; border-top: 1px solid #eee; font-size: 14px; }
+        .step input[type="checkbox"] { margin-right: 10px; transform: scale(1.3); }
+        .step.done span { text-decoration: line-through; color: #94a3b8; }
+        
+        /* Tombol-tombol CRUD */
+        .btn { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        .btn-add { background: #10b981; color: white; width: 100%; padding: 12px; margin-bottom: 15px; font-size: 15px; }
+        .btn-delete { background: #ef4444; color: white; }
+        .btn-step { background: #3b82f6; color: white; width: 100%; margin-top: 10px; font-size: 12px; padding: 8px; }
+        .actions { display: flex; gap: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2>Tugas Tim Persiapan</h2>
+        <p id="tgl">Memuat tanggal...</p>
     </div>
 
-  </div>
-</div>
+    <!-- Tombol Tambah Tugas Baru -->
+    <button class="btn btn-add" onclick="tambahTugas()">➕ Tambah Tugas Baru</button>
 
-<script>
-// === KONFIGURASI ===
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwV_vZq9R1S5yOzsA--gtkx1zpEBohKdTGiXclEn4vsoeSOiUpNgUxPZFHNdZ2LWtalqA/exec"; 
-const ADMIN_PASSWORD = "admincwfn";
+    <div id="daftar-tugas">
+        <p style="text-align:center; color:#666;">Memuat data dari database...</p>
+    </div>
 
-const DEFAULT_SHEET_ID = "1x5LlGdHIPmkcbwUMeP_JGymBWCn39znsAxYoL9SmjNM";
-const REGISTRY_SHEET_ID = "12NhR0KH1Q_YfeJJJNotC_o2b60Irn-Jtpo5F2DbRdyA";
-let SHEET_ID = DEFAULT_SHEET_ID;
+    <script>
+        // URL CLOUDFLARE WORKER ANDA
+        const API_URL = 'https://api-dapur.usep-warman.workers.dev';
+        
+        // Mengambil parameter ?dapur=... dari URL (default ke sb2 jika kosong)
+        const urlParams = new URLSearchParams(window.location.search);
+        const dapurSlug = urlParams.get('dapur') || 'sb2';
 
-const TAB_RESEP = "Master_Resep", TAB_MASTER = "MasterKartuStandard", TAB_JADWAL = "Jadwal_Menu_Mingguan";   
-const DAYS_MASAK = ["Senin","Selasa","Rabu","Kamis","Jumat"];
-const DAYS_PERSIAPAN = ["Senin","Selasa","Rabu","Kamis","Jumat"];
-const CAT_ORDER = ["Karbohidrat", "Lauk Hewani", "Lauk Nabati", "Sayur", "Sayuran"];
+        // 1. READ: Ambil dan Tampilkan Data
+        async function muatData() {
+            const container = document.getElementById('daftar-tugas');
+            try {
+                const res = await fetch(`${API_URL}?dapur=${dapurSlug}`);
+                const data = await res.json();
+                renderData(data);
+            } catch (err) {
+                container.innerHTML = `<p style="color:red;">Gagal memuat data. Pastikan API URL benar.</p>`;
+            }
+        }
 
-let CURRENT_APP = "persiapan", CACHE_JADWAL = [], CACHE_MASTER = [], CACHE_RESEP = [], MENU_ARRAY = [];
-let SELECTED_DAY_MASAK = null, SELECTED_DAY_PERSIAPAN = null, todayDayName = "";
+        function renderData(data) {
+            const container = document.getElementById('daftar-tugas');
+            container.innerHTML = '';
+            
+            if (data.length === 0) {
+                container.innerHTML = '<p style="text-align:center;">Belum ada tugas di dapur ini.</p>';
+                return;
+            }
+
+            data.forEach(task => {
+                let stepsHtml = '';
+                const steps = task.steps || []; 
+                
+                steps.forEach(step => {
+                    stepsHtml += `
+                        <label class="step ${step.is_completed ? 'done' : ''}">
+                            <input type="checkbox" ${step.is_completed ? 'checked' : ''} 
+                                onchange="toggleStep('${step.id}', ${step.is_completed})">
+                            <span>${step.instruction}</span>
+                        </label>
+                    `;
+                });
+
+                container.innerHTML += `
+                    <div class="card">
+                        <div class="category">${task.category}</div>
+                        <div class="title">
+                            ${task.title}
+                            <div class="actions">
+                                <button class="btn btn-delete" onclick="hapusTugas('${task.id}')">🗑️ Hapus</button>
+                            </div>
+                        </div>
+                        <div class="pic">👤 PIC: ${task.pic_name || '-'}</div>
+                        <div class="steps-container">
+                            ${stepsHtml || '<p style="font-size:12px; color:#999;">Belum ada SOP.</p>'}
+                        </div>
+                        <button class="btn btn-step" onclick="tambahLangkah('${task.id}')">+ Tambah SOP</button>
+                    </div>
+                `;
+            });
+        }
+
+        // 2. CREATE: Tambah Tugas
+        async function tambahTugas() {
+            const title = prompt("Nama Tugas (cth: Nasi Putih):");
+            if (!title) return;
+            const category = prompt("Kategori (cth: Karbohidrat, Lauk Hewani):");
+            if (!category) return;
+            const pic = prompt("Nama PIC (cth: Budi):");
+            
+            await fetch(`${API_URL}?dapur=${dapurSlug}&action=create_task`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    title, 
+                    category, 
+                    pic_name: pic || 'Belum di-assign',
+                    menu_date: new Date().toISOString().split('T')[0]
+                })
+            });
+            muatData();
+        }
+
+        // 3. CREATE: Tambah Langkah SOP
+        async function tambahLangkah(taskId) {
+            const instruction = prompt("Masukkan langkah SOP:");
+            if (!instruction) return;
+
+            await fetch(`${API_URL}?action=add_step`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task_id: taskId, instruction })
+            });
+            muatData();
+        }
+
+        // 4. UPDATE: Centang SOP
+        async function toggleStep(stepId, currentStatus) {
+            await fetch(`${API_URL}?action=toggle_step`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ step_id: stepId, is_completed: !currentStatus })
+            });
+            muatData();
+        }
+
+        // 5. DELETE: Hapus Tugas
+        async function hapusTugas(taskId) {
+            if (!confirm("Yakin ingin menghapus tugas ini beserta SOP-nya?")) return;
+            
+            await fetch(`${API_URL}?action=delete_task&id=${taskId}`, {
+                method: 'DELETE'
+            });
+            muatData();
+        }
+
+        // Jalankan saat halaman dibuka
+        document.getElementById('tgl').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        muatData();
+    </script>
+</body>
+</html>
