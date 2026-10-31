@@ -2,37 +2,99 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tugas Tim Persiapan</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dapur MBG - Tim Persiapan</title>
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; background: #f4f6f8; margin: 0; padding: 15px; }
-        .header { background: #1e293b; color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-        .card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .category { font-weight: bold; color: #b45309; font-size: 14px; text-transform: uppercase; margin-bottom: 5px; }
+        :root {
+            --primary: #1e293b;
+            --accent: #10b981;
+            --danger: #ef4444;
+            --bg: #f4f6f8;
+            --text: #334155;
+        }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; color: var(--text); padding-bottom: 70px; }
+        
+        /* Header */
+        .header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 10; }
+        .header h2 { margin: 0 0 5px 0; font-size: 20px; }
+        .header p { margin: 0; font-size: 14px; color: #cbd5e1; }
+
+        /* Tab Hari */
+        .tabs { display: flex; background: #0f172a; overflow-x: auto; position: sticky; top: 65px; z-index: 9; }
+        .tab { flex: 1; text-align: center; padding: 12px 5px; color: #94a3b8; font-size: 14px; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; }
+        .tab.active { color: #fbbf24; border-bottom-color: #fbbf24; background: var(--primary); }
+
+        /* Konten */
+        .content { padding: 15px; display: none; }
+        .content.active { display: block; }
+
+        /* Kartu Jadwal */
+        .card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 4px solid var(--accent); }
+        .category { font-weight: bold; color: #b45309; font-size: 12px; text-transform: uppercase; margin-bottom: 5px; }
         .title { font-size: 18px; font-weight: bold; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
-        .pic { font-size: 13px; color: #64748b; margin-bottom: 10px; }
-        .step { display: flex; align-items: center; padding: 8px 0; border-top: 1px solid #eee; font-size: 14px; }
-        .step input[type="checkbox"] { margin-right: 10px; transform: scale(1.3); }
+        .pic { font-size: 13px; color: #64748b; margin-bottom: 10px; background: #f1f5f9; display: inline-block; padding: 3px 8px; border-radius: 4px; }
+        .step { display: flex; align-items: flex-start; padding: 8px 0; border-top: 1px dashed #e2e8f0; font-size: 14px; }
+        .step input[type="checkbox"] { margin-right: 12px; margin-top: 3px; transform: scale(1.3); }
         .step.done span { text-decoration: line-through; color: #94a3b8; }
         
-        .btn { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px; }
-        .btn-add { background: #10b981; color: white; width: 100%; padding: 12px; margin-bottom: 15px; font-size: 15px; }
-        .btn-delete { background: #ef4444; color: white; }
-        .btn-step { background: #3b82f6; color: white; width: 100%; margin-top: 10px; font-size: 12px; padding: 8px; }
-        .actions { display: flex; gap: 5px; }
+        /* Tombol */
+        .btn { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .btn-add { background: var(--accent); color: white; width: 100%; margin-bottom: 15px; }
+        .btn-delete { background: var(--danger); color: white; padding: 6px 10px; font-size: 12px; }
+
+        /* List Resep & Karyawan */
+        .list-item { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .list-item h4 { margin: 0 0 5px 0; font-size: 16px; }
+        .list-item p { margin: 0; font-size: 13px; color: #64748b; }
+
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 20; }
+        .nav-item { flex: 1; text-align: center; padding: 12px 0; color: #94a3b8; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item span { display: block; font-size: 20px; margin-bottom: 3px; }
+
+        .loading { text-align: center; color: #64748b; padding: 20px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2>Tugas Tim Persiapan</h2>
-        <p id="tgl">Memuat tanggal...</p>
+        <h2>Dapur MBG</h2>
+        <p id="header-subtitle">Jadwal Persiapan</p>
     </div>
 
-    <button class="btn btn-add" onclick="tambahTugas()">➕ Tambah Tugas Baru</button>
+    <!-- KONTEN: JADWAL -->
+    <div id="page-jadwal" class="content active" style="padding: 0;">
+        <div class="tabs" id="tab-container" style="top: 65px;"></div>
+        <div style="padding: 15px;">
+            <button class="btn btn-add" onclick="bukaModalJadwal()">➕ Tambah Jadwal Menu</button>
+            <div id="daftar-jadwal"><div class="loading">Memuat jadwal...</div></div>
+        </div>
+    </div>
 
-    <div id="daftar-tugas">
-        <p style="text-align:center; color:#666;">Memuat data...</p>
+    <!-- KONTEN: BUKU RESEP -->
+    <div id="page-resep" class="content">
+        <h3>Buku Resep & SOP</h3>
+        <div id="daftar-resep"><div class="loading">Memuat resep...</div></div>
+    </div>
+
+    <!-- KONTEN: KARYAWAN -->
+    <div id="page-karyawan" class="content">
+        <h3>Data Karyawan</h3>
+        <div id="daftar-karyawan"><div class="loading">Memuat karyawan...</div></div>
+    </div>
+
+    <!-- BOTTOM NAVIGATION -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="gantiHalaman('jadwal', this)">
+            <span>📅</span> Jadwal
+        </div>
+        <div class="nav-item" onclick="gantiHalaman('resep', this)">
+            <span>📖</span> Buku Resep
+        </div>
+        <div class="nav-item" onclick="gantiHalaman('karyawan', this)">
+            <span>👥</span> Karyawan
+        </div>
     </div>
 
     <script>
@@ -40,96 +102,157 @@
         const urlParams = new URLSearchParams(window.location.search);
         const dapurSlug = urlParams.get('dapur') || 'sb2';
 
-        async function muatData() {
-            const container = document.getElementById('daftar-tugas');
-            try {
-                const res = await fetch(`${API_URL}?dapur=${dapurSlug}`);
-                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
-                
-                const data = await res.json();
-                renderData(data);
-            } catch (err) {
-                container.innerHTML = `<p style="color:red; font-size:12px;">Gagal memuat: ${err.message}</p>`;
-            }
+        let selectedDate = '';
+        let selectedDayName = '';
+        
+        // Data Master (diambil dari database)
+        let masterMenus = [];
+        let masterEmployees = [];
+
+        // ==========================================
+        // NAVIGASI HALAMAN & TAB
+        // ==========================================
+        function gantiHalaman(pageId, element) {
+            document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(`page-${pageId}`).classList.add('active');
+            element.classList.add('active');
+
+            const subtitle = document.getElementById('header-subtitle');
+            if(pageId === 'jadwal') subtitle.innerText = 'Jadwal Persiapan';
+            if(pageId === 'resep') subtitle.innerText = 'Master Buku Resep';
+            if(pageId === 'karyawan') subtitle.innerText = 'Data Karyawan';
         }
 
-        function renderData(data) {
-            const container = document.getElementById('daftar-tugas');
-            container.innerHTML = '';
-            
-            if (data.length === 0) {
-                container.innerHTML = '<p style="text-align:center;">Belum ada tugas.</p>';
-                return;
-            }
+        function getMonday(d) {
+            d = new Date(d);
+            var day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6 : 1);
+            return new Date(d.setDate(diff));
+        }
 
-            data.forEach(task => {
-                let stepsHtml = '';
-                let stepsArray = [];
+        function formatDate(date) {
+            const offset = date.getTimezoneOffset();
+            const d = new Date(date.getTime() - (offset*60*1000));
+            return d.toISOString().split('T')[0];
+        }
 
-                // Perbaikan: Karena steps dari database berbentuk teks JSON, kita ubah jadi Array
-                if (task.steps) {
-                    try {
-                        stepsArray = JSON.parse(task.steps);
-                    } catch (e) {
-                        stepsArray = [];
-                    }
+        function renderTabs() {
+            const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
+            const tabContainer = document.getElementById('tab-container');
+            tabContainer.innerHTML = '';
+            const baseMonday = getMonday(new Date());
+
+            days.forEach((day, index) => {
+                const date = new Date(baseMonday);
+                date.setDate(baseMonday.getDate() + index);
+                const dateString = formatDate(date);
+
+                // Set default ke hari ini jika kosong
+                if(!selectedDate) {
+                    selectedDate = dateString;
+                    selectedDayName = day;
                 }
 
-                stepsArray.forEach(step => {
-                    const isChecked = step.is_completed === 1;
-                    stepsHtml += `
-                        <label class="step ${isChecked ? 'done' : ''}">
-                            <input type="checkbox" ${isChecked ? 'checked' : ''} 
-                                onchange="toggleStep('${step.id}', ${isChecked})">
-                            <span>${step.instruction}</span>
-                        </label>
+                const tab = document.createElement('div');
+                tab.className = `tab ${day === selectedDayName ? 'active' : ''}`;
+                tab.innerText = day;
+                tab.onclick = () => {
+                    selectedDayName = day;
+                    selectedDate = dateString;
+                    renderTabs();
+                    muatJadwal();
+                };
+                tabContainer.appendChild(tab);
+            });
+        }
+
+        // ==========================================
+        // FUNGSI LOAD DATA MASTER (RESEP & KARYAWAN)
+        // ==========================================
+        async function loadMasterData() {
+            try {
+                const res = await fetch(`${API_URL}?dapur=${dapurSlug}&action=get_master`);
+                const data = await res.json();
+                masterMenus = data.menus;
+                masterEmployees = data.employees;
+
+                // Render List Resep
+                const resepContainer = document.getElementById('daftar-resep');
+                resepContainer.innerHTML = '';
+                if(masterMenus.length === 0) resepContainer.innerHTML = '<p>Belum ada resep.</p>';
+                masterMenus.forEach(menu => {
+                    let steps = JSON.parse(menu.steps || '[]').map(s => `<li>${s.instruction}</li>`).join('');
+                    resepContainer.innerHTML += `
+                        <div class="list-item">
+                            <h4>${menu.title} <small style="color:#b45309">(${menu.category})</small></h4>
+                            <ul style="font-size:13px; color:#64748b; padding-left:20px; margin-top:5px; margin-bottom:0;">${steps}</ul>
+                        </div>
                     `;
                 });
 
-                container.innerHTML += `
-                    <div class="card">
-                        <div class="category">${task.category}</div>
-                        <div class="title">
-                            ${task.title}
-                            <div class="actions">
-                                <button class="btn btn-delete" onclick="hapusTugas('${task.id}')">🗑️</button>
+                // Render List Karyawan
+                const karyawanContainer = document.getElementById('daftar-karyawan');
+                karyawanContainer.innerHTML = '';
+                if(masterEmployees.length === 0) karyawanContainer.innerHTML = '<p>Belum ada karyawan.</p>';
+                masterEmployees.forEach(emp => {
+                    karyawanContainer.innerHTML += `<div class="list-item"><h4>👤 ${emp.name}</h4></div>`;
+                });
+
+            } catch (err) {
+                console.error("Gagal load master data", err);
+            }
+        }
+
+        // ==========================================
+        // FUNGSI JADWAL HARIAN
+        // ==========================================
+        async function muatJadwal() {
+            const container = document.getElementById('daftar-jadwal');
+            container.innerHTML = '<div class="loading">Memuat jadwal...</div>';
+            try {
+                const res = await fetch(`${API_URL}?dapur=${dapurSlug}&date=${selectedDate}`);
+                const data = await res.json();
+                
+                container.innerHTML = '';
+                if (data.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; color:#64748b;">Belum ada jadwal untuk hari ini.</p>';
+                    return;
+                }
+
+                data.forEach(sch => {
+                    let stepsHtml = '';
+                    let stepsArray = JSON.parse(sch.steps || '[]');
+                    
+                    // Urutkan step berdasarkan step_order
+                    stepsArray.sort((a, b) => a.step_order - b.step_order);
+
+                    stepsArray.forEach(step => {
+                        const isChecked = step.is_completed === 1;
+                        stepsHtml += `
+                            <label class="step ${isChecked ? 'done' : ''}">
+                                <input type="checkbox" ${isChecked ? 'checked' : ''} 
+                                    onchange="toggleStep('${step.id}', ${isChecked})">
+                                <span>${step.instruction}</span>
+                            </label>
+                        `;
+                    });
+
+                    container.innerHTML += `
+                        <div class="card">
+                            <div class="category">${sch.category}</div>
+                            <div class="title">
+                                ${sch.menu_title}
+                                <button class="btn btn-delete" onclick="hapusJadwal('${sch.schedule_id}')">🗑️</button>
                             </div>
+                            <div class="pic">👤 PIC: ${sch.employee_name}</div>
+                            <div>${stepsHtml}</div>
                         </div>
-                        <div class="pic">👤 PIC: ${task.pic_name || '-'}</div>
-                        <div class="steps-container">
-                            ${stepsHtml || '<p style="font-size:12px; color:#999;">Belum ada SOP.</p>'}
-                        </div>
-                        <button class="btn btn-step" onclick="tambahLangkah('${task.id}')">+ Tambah SOP</button>
-                    </div>
-                `;
-            });
-        }
-
-        async function tambahTugas() {
-            const title = prompt("Nama Tugas (cth: Nasi Putih):");
-            if (!title) return;
-            const category = prompt("Kategori (cth: Karbohidrat, Lauk Hewani):");
-            if (!category) return;
-            const pic = prompt("Nama PIC (cth: Budi):");
-            
-            await fetch(`${API_URL}?dapur=${dapurSlug}&action=create_task`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, category, pic_name: pic || 'Belum di-assign', menu_date: new Date().toISOString().split('T')[0] })
-            });
-            muatData();
-        }
-
-        async function tambahLangkah(taskId) {
-            const instruction = prompt("Masukkan langkah SOP:");
-            if (!instruction) return;
-
-            await fetch(`${API_URL}?action=add_step`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ task_id: taskId, instruction })
-            });
-            muatData();
+                    `;
+                });
+            } catch (err) {
+                container.innerHTML = `<p style="color:red;">Gagal memuat jadwal: ${err.message}</p>`;
+            }
         }
 
         async function toggleStep(stepId, currentStatus) {
@@ -138,17 +261,55 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ step_id: stepId, is_completed: !currentStatus })
             });
-            muatData();
+            muatJadwal();
         }
 
-        async function hapusTugas(taskId) {
-            if (!confirm("Yakin ingin menghapus tugas ini?")) return;
-            await fetch(`${API_URL}?action=delete_task&id=${taskId}`, { method: 'DELETE' });
-            muatData();
+        async function hapusJadwal(scheduleId) {
+            if (!confirm("Yakin ingin menghapus jadwal ini?")) return;
+            await fetch(`${API_URL}?action=delete_schedule&id=${scheduleId}`, { method: 'DELETE' });
+            muatJadwal();
         }
 
-        document.getElementById('tgl').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        muatData();
+        // ==========================================
+        // FUNGSI TAMBAH JADWAL
+        // ==========================================
+        function bukaModalJadwal() {
+            if (masterMenus.length === 0 || masterEmployees.length === 0) {
+                alert("Buku resep atau data karyawan masih kosong. Silakan isi terlebih dahulu (fitur input akan datang).");
+                return;
+            }
+
+            // Karena kita pakai prompt sederhana untuk MVP:
+            let menuNames = masterMenus.map((m, i) => `${i + 1}. ${m.title}`).join('\n');
+            let pilihanMenu = prompt(`Pilih Menu (ketik angka):\n${menuNames}`);
+            if (!pilihanMenu) return;
+            
+            let menuIndex = parseInt(pilihanMenu) - 1;
+            if (!masterMenus[menuIndex]) return alert("Menu tidak valid");
+
+            let empNames = masterEmployees.map((e, i) => `${i + 1}. ${e.name}`).join('\n');
+            let pilihanEmp = prompt(`Pilih PIC (ketik angka):\n${empNames}`);
+            if (!pilihanEmp) return;
+
+            let empIndex = parseInt(pilihanEmp) - 1;
+            if (!masterEmployees[empIndex]) return alert("PIC tidak valid");
+
+            // Kirim ke API
+            fetch(`${API_URL}?dapur=${dapurSlug}&action=create_schedule`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    menu_id: masterMenus[menuIndex].id, 
+                    employee_id: masterEmployees[empIndex].id,
+                    menu_date: selectedDate
+                })
+            }).then(() => muatJadwal());
+        }
+
+        // Jalankan saat aplikasi dibuka
+        renderTabs();
+        loadMasterData(); // Ambil data resep & karyawan
+        muatJadwal();     // Ambil jadwal hari ini
     </script>
 </body>
 </html>
